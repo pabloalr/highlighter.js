@@ -1,10 +1,12 @@
 /* global jQuery */
 
 /*
- * Highlighter.js 1.0
+ * Highlighter.js 2.0.Mailee
  *
  * Author: Matthew Conlen <matt.conlen@huffingtonpost.com>
  *         Huffington Post Labs
+ *         Pablo Lerina
+ *         Mailee
  *
  * Copyright 2012: Huffington Post Labs
  *
@@ -46,7 +48,7 @@
                 event.type = "tripleclick";
 
                 // let jQuery handle the triggering of "tripleclick" event handlers
-                jQuery.event.handle.apply(this, arguments);
+                jQuery.event.dispatch.apply(this, arguments);
             }
             $elem.data('clicks', clicks);
         }
@@ -81,7 +83,9 @@
             var settings = $.extend({
                 'selector': '.highlighter-container',
                 'minWords': 0,
-                'textVariable': null
+                'textVariable': null,
+                'complete': function() {},
+                'iframeEl': null
             }, options);
             var numClicks = 0;
             var topOffset = 0;
@@ -104,26 +108,28 @@
                     var isIE = (navigator.appName === "Microsoft Internet Explorer");
                     var sel, range, expandedSelRange, node;
                     var position;
-                    if (window.getSelection) {
-                        sel = window.getSelection();
+                    var _window = (settings.iframeEl ? $(settings.iframeEl)[0].contentWindow : window);
+                    var _document = (settings.iframeEl ? $(settings.iframeEl).contents()[0] : document);
+                    if (_window.getSelection) {
+                        sel = _window.getSelection();
                         selText = sel.toString();
                         if ($.trim(selText) === '' || selText.split(' ').length < settings.minWords) return;
 
                         if(settings.textVariable) {
-                            window[settings.textVariable] = selText;
+                            _window[settings.textVariable] = selText;
                         }
 
                         if (sel.getRangeAt && sel.rangeCount) {
-                            range = window.getSelection().getRangeAt(0);
+                            range = _window.getSelection().getRangeAt(0);
 
                             expandedSelRange = range.cloneRange();
                             expandedSelRange.collapse(false);
 
                             // Range.createContextualFragment() would be useful here but is
                             // non-standard and not supported in all browsers (IE9, for one)
-                            var el = document.createElement("div");
+                            var el = _document.createElement("div");
                             el.innerHTML = html;
-                            var dummy = document.createElement("span");
+                            var dummy = _document.createElement("span");
 
                             if (range.startOffset === 0 && range.endOffset === 0) {
 
@@ -160,8 +166,8 @@
                                 dummy.parentNode.removeChild(dummy);
                             }
                         }
-                    } else if (document.selection && document.selection.createRange) {
-                        range = document.selection.createRange();
+                    } else if (_document.selection && _document.selection.createRange) {
+                        range = _document.selection.createRange();
                         expandedSelRange = range.duplicate();
                         range.collapse(false);
                         range.pasteHTML(html);
@@ -171,9 +177,27 @@
                         $(".dummy").remove();
                     }
 
-                    $(settings.selector).css("top", position.top + topOffset + "px");
-                    $(settings.selector).css("left", position.left + leftOffset + "px");
-                    $(settings.selector).show();
+                    // get iframe offset
+                    if (settings.iframeEl) {
+                      var rect = $(settings.iframeEl)[0].getBoundingClientRect();
+                      var tOffset = rect.top;
+                      var lOffset = rect.left;
+                      // get iframe Scroll Top
+                      var scrollTop = $(settings.iframeEl).contents().find('body').scrollTop();
+                      var _sTop = position.top + topOffset + tOffset - scrollTop;
+                      var _sLeft = position.left + topOffset + lOffset;
+                      // console.log("Top: %s Left: %s", _sTop, _sLeft);
+                      $(settings.selector).css("top", _sTop  + "px");
+                      $(settings.selector).css("left", _sLeft + "px");
+                    } else {
+                      $(settings.selector).css("top", position.top + topOffset + "px");
+                      $(settings.selector).css("left", position.left + leftOffset + "px");
+                    }
+
+                    $(settings.selector).show(0, function() {
+                      settings.complete(selText);
+                    });
+
                 }
                 $(settings.selector).hide();
                 $(settings.selector).css("position", "absolute");

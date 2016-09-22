@@ -1,9 +1,14 @@
 highlighter.js
 ==============
 
-A jQuery plugin that allows for enabling tooltips on user selected text
+A jQuery plugin that allows for enabling tooltips on user selected text.
 
 [Demo](http://huffpostlabs.github.com/highlighter.js/ "Demo")
+
+Forked
+------
+
+This fork adds iFrame support.
 
 Usage
 -----
@@ -46,13 +51,15 @@ On init you can pass in a settings object that will recognize two parameters:
 ```javascript
 $('.article').highlighter({
                            'selector': '.highlighter-container',
-                           'minWords': 0
+                           'minWords': 0,
+                           'iframeEl': '#myIframe'
 });
 ```
 
 Where ```selector``` is the jQuery selector string of the element that you want to show upon text being selected, and ```minWords``` is the minimum number of words that have
 to be selected in order for the tooltip to appear. The defaults are ```'.highlighter-container'```, and ```0```, respectively.
 
+And ```ìframeEl````is the selector string of your iframe.
 
 Compatibility
 ------
